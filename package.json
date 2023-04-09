@@ -1,17 +1,18 @@
 {
-  "name": "express-demo",
-  "version": "1.0.0",
-  "description": "",
-  "main": "sls.js",
+  "name": "puppeteer-node-spider",
+  "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "dev": "NODE_ENV=development node app.js"
+    "start": "node ./bin/www"
   },
-  "author": "yugasun",
-  "license": "MIT",
   "dependencies": {
     "body-parser": "^1.20.2",
-    "express": "^4.17.1",
-    "multer": "^1.4.2",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.1",
     "puppeteer": "^19.8.5"
   }
 }

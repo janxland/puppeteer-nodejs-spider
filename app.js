@@ -1,94 +1,78 @@
-const express = require('express')
-const multer = require('multer');
-const path = require('path')
-const app = express()
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
 const bodyParser = require('body-parser');
 const puppeteer = require('puppeteer');
 process.on('uncaughtException', function (err) {
   console.log(err);
 });
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+var app = express();
 app.use(bodyParser.json());
-app.get('/scrape', async (req, res) => {
-const url = req.query.url || 'https://www.baidu.com';
-    const browser = await puppeteer.launch({
-        ignoreHTTPSErrors: true
-    });
-    const page = await browser.newPage();
-    page.setViewport({width:1200,height:1960})
-    await page.setBypassCSP(true);
-    await page.setExtraHTTPHeaders({
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'
-    });
-    await page.goto(url, { waitUntil: 'networkidle2' });
-    
-    const content = await page.content();
-    page.screenshot();
-    await page.screenshot({ path: 'example.png' });
-    await browser.close();
-    res.send(content);
-});
-app.post('/scrape', async (req, res) => {
-    const url = req.body.url || 'https://www.baidu.com';
-    const browser = await puppeteer.launch({
-      ignoreHTTPSErrors: true
-    });
-    const page = await browser.newPage();
-    await page.setBypassCSP(true);
-    await page.setExtraHTTPHeaders({
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'
-    });
-    await page.goto(url, { waitUntil: 'networkidle2' }); //load  domcontentloaded  networkidle2
-    const content = await page.content();
-    await browser.close();
-    res.send(content);
-});
-// Serverless 场景只能读写 /tmp 目录，所以这里需要指定上传文件的目录为 /tmp/upload
-const upload = multer({ dest: '/tmp/upload' });
 
-// Routes
-app.get(`/`, (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'))
-})
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
 
-app.get('/user', (req, res) => {
-  res.send([
-    {
-      title: 'serverless framework',
-      link: 'https://serverless.com'
-    }
-  ])
-})
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/user/:id', (req, res) => {
-  const id = req.params.id
-  res.send({
-    id: id,
-    title: 'serverless framework',
-    link: 'https://serverless.com'
-  })
-})
-
-app.get('/404', (req, res) => {
-  res.status(404).send('Not found')
-})
-
-app.get('/500', (req, res) => {
-  res.status(500).send('Server Error')
-})
-
-app.post('/upload', upload.single('file'), (req, res) => {
-  res.send({
-    success: true,
-    data: req.file,
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+app.use('/scrape', async (req, res) => {
+  const url = req.query.url || 'https://www.baidu.com';
+      const browser = await puppeteer.launch({
+          ignoreHTTPSErrors: true
+      });
+      const page = await browser.newPage();
+      page.setViewport({width:1200,height:1960})
+      await page.setBypassCSP(true);
+      await page.setExtraHTTPHeaders({
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'
+      });
+      await page.goto(url, { waitUntil: 'networkidle2' });
+      
+      const content = await page.content();
+      page.screenshot();
+      await page.screenshot({ path: 'example.png' });
+      await browser.close();
+      res.send(content);
   });
+  // app.post('/scrape', async (req, res) => {
+  //     const url = req.body.url || 'https://www.baidu.com';
+  //     const browser = await puppeteer.launch({
+  //       ignoreHTTPSErrors: true
+  //     });
+  //     const page = await browser.newPage();
+  //     await page.setBypassCSP(true);
+  //     await page.setExtraHTTPHeaders({
+  //       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'
+  //     });
+  //     await page.goto(url, { waitUntil: 'networkidle2' }); //load  domcontentloaded  networkidle2
+  //     const content = await page.content();
+  //     await browser.close();
+  //     res.send(content);
+  // });
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
 });
 
-// Error handler
+// error handler
 app.use(function(err, req, res, next) {
-  console.error(err)
-  res.status(500).send('Internal Serverless Error')
-})
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-app.listen(9000, () => {
-  console.log(`Server start on http://localhost:9000`);
-})
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
+
+module.exports = app;
