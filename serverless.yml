@@ -1,0 +1,16 @@
+component: http
+name: expressDemo
+inputs:
+  src:
+    src: ./
+    exclude:
+      - .env
+  faas:
+    runtime: Nodejs12.16
+    framework: express
+    name: ${name}
+  apigw:
+    protocols:
+      - http
+      - https
+app: puppeteer-node-spider
